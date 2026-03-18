@@ -9,26 +9,66 @@
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-VoiceScribeApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-VoiceScribeApp.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		364AB986861A71A0567D392B /* VoiceScribeWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8DE3286262EF3F78AB2B6527 /* VoiceScribeWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6197CD1E2F66EC36004AEC18 /* DeviceInfoModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6197CD1D2F66EC35004AEC18 /* DeviceInfoModule.swift */; };
 		6197CD202F66EC3A004AEC18 /* DeviceInfoModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 6197CD1F2F66EC3A004AEC18 /* DeviceInfoModule.m */; };
+		6966D8A0EBDFDCE1A7BD7600 /* WidgetDataModule.m in Sources */ = {isa = PBXBuildFile; fileRef = B07BBA5F5ECC0CED64006964 /* WidgetDataModule.m */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		A1DC9AF0F85A0D53126A6E57 /* VoiceScribeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8015B6BCDB8BCA545AA4C8EB /* VoiceScribeWidget.swift */; };
+		ABE015DBAE7550A485FFA206 /* WidgetDataModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9B857970B4CEF50FA717EC /* WidgetDataModule.swift */; };
+		CB1DA6AAD1D8049816B14C71 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 82987DFC4441D6C20F40D84F /* Assets.xcassets */; };
+		D1DCE365EA266DE59FC41D30 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 37AE1A4BE71274C984C4D783 /* Foundation.framework */; };
 		F6FF521838C06DABC7477497 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		FF116FB9296CD192A8E3B450 /* VoiceScribeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 826898026AD48B2EDEB7906E /* VoiceScribeWidgetBundle.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7D3EC6C02F1EC71F5D823C7B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2814AA2C84C19314D5C1A675;
+			remoteInfo = VoiceScribeWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		73C84CF96DFBF5CAD8F10244 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				364AB986861A71A0567D392B /* VoiceScribeWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* VoiceScribeApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceScribeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = VoiceScribeApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VoiceScribeApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = VoiceScribeApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		37AE1A4BE71274C984C4D783 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-VoiceScribeApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VoiceScribeApp.debug.xcconfig"; path = "Target Support Files/Pods-VoiceScribeApp/Pods-VoiceScribeApp.debug.xcconfig"; sourceTree = "<group>"; };
+		3F9B857970B4CEF50FA717EC /* WidgetDataModule.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetDataModule.swift; sourceTree = "<group>"; };
+		5116F4AEE7D1C9906C51000E /* VoiceScribeWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = VoiceScribeWidget.entitlements; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-VoiceScribeApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VoiceScribeApp.release.xcconfig"; path = "Target Support Files/Pods-VoiceScribeApp/Pods-VoiceScribeApp.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-VoiceScribeApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-VoiceScribeApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6197CD1D2F66EC35004AEC18 /* DeviceInfoModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfoModule.swift; sourceTree = "<group>"; };
 		6197CD1F2F66EC3A004AEC18 /* DeviceInfoModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DeviceInfoModule.m; sourceTree = "<group>"; };
 		6197CD212F66EC41004AEC18 /* VoiceScribeApp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "VoiceScribeApp-Bridging-Header.h"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = VoiceScribeApp/AppDelegate.swift; sourceTree = "<group>"; };
+		8015B6BCDB8BCA545AA4C8EB /* VoiceScribeWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceScribeWidget.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = VoiceScribeApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		826898026AD48B2EDEB7906E /* VoiceScribeWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceScribeWidgetBundle.swift; sourceTree = "<group>"; };
+		82987DFC4441D6C20F40D84F /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8DE3286262EF3F78AB2B6527 /* VoiceScribeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VoiceScribeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E7A7576FF64658D2DCC2253 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B07BBA5F5ECC0CED64006964 /* WidgetDataModule.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = WidgetDataModule.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -41,9 +81,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B40F45F1B88779C2689D75BB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D1DCE365EA266DE59FC41D30 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B9FB6234FED52A41F716E86 /* VoiceScribeWidget */ = {
+			isa = PBXGroup;
+			children = (
+				8015B6BCDB8BCA545AA4C8EB /* VoiceScribeWidget.swift */,
+				826898026AD48B2EDEB7906E /* VoiceScribeWidgetBundle.swift */,
+				82987DFC4441D6C20F40D84F /* Assets.xcassets */,
+				8E7A7576FF64658D2DCC2253 /* Info.plist */,
+				5116F4AEE7D1C9906C51000E /* VoiceScribeWidget.entitlements */,
+			);
+			name = VoiceScribeWidget;
+			path = VoiceScribeWidget;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* VoiceScribeApp */ = {
 			isa = PBXGroup;
 			children = (
@@ -55,6 +116,8 @@
 				6197CD1D2F66EC35004AEC18 /* DeviceInfoModule.swift */,
 				6197CD1F2F66EC3A004AEC18 /* DeviceInfoModule.m */,
 				6197CD212F66EC41004AEC18 /* VoiceScribeApp-Bridging-Header.h */,
+				3F9B857970B4CEF50FA717EC /* WidgetDataModule.swift */,
+				B07BBA5F5ECC0CED64006964 /* WidgetDataModule.m */,
 			);
 			name = VoiceScribeApp;
 			sourceTree = "<group>";
@@ -64,6 +127,7 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-VoiceScribeApp.a */,
+				C23AD26860D86BB3605F50A1 /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -83,6 +147,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				0B9FB6234FED52A41F716E86 /* VoiceScribeWidget */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -93,6 +158,8 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* VoiceScribeApp.app */,
+				8DE3286262EF3F78AB2B6527 /* VoiceScribeWidget.appex */,
+				8DE3286262EF3F78AB2B6527 /* VoiceScribeWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -104,6 +171,14 @@
 				5709B34CF0A7D63546082F79 /* Pods-VoiceScribeApp.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		C23AD26860D86BB3605F50A1 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				37AE1A4BE71274C984C4D783 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,15 +195,34 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				73C84CF96DFBF5CAD8F10244 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				295CE0D9FF03D1567E8FBFD8 /* PBXTargetDependency */,
 			);
 			name = VoiceScribeApp;
 			productName = VoiceScribeApp;
 			productReference = 13B07F961A680F5B00A75B9A /* VoiceScribeApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		2814AA2C84C19314D5C1A675 /* VoiceScribeWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 252942B2A5188FAAA7064682 /* Build configuration list for PBXNativeTarget "VoiceScribeWidget" */;
+			buildPhases = (
+				2C9CE0A022DBC4F00B837DF2 /* Sources */,
+				B40F45F1B88779C2689D75BB /* Frameworks */,
+				39EC5A3E310EF818096DEC72 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoiceScribeWidget;
+			productName = VoiceScribeWidget;
+			productReference = 8DE3286262EF3F78AB2B6527 /* VoiceScribeWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -158,6 +252,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* VoiceScribeApp */,
+				2814AA2C84C19314D5C1A675 /* VoiceScribeWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -170,6 +265,14 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				F6FF521838C06DABC7477497 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		39EC5A3E310EF818096DEC72 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CB1DA6AAD1D8049816B14C71 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,10 +361,30 @@
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 				6197CD1E2F66EC36004AEC18 /* DeviceInfoModule.swift in Sources */,
 				6197CD202F66EC3A004AEC18 /* DeviceInfoModule.m in Sources */,
+				ABE015DBAE7550A485FFA206 /* WidgetDataModule.swift in Sources */,
+				6966D8A0EBDFDCE1A7BD7600 /* WidgetDataModule.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2C9CE0A022DBC4F00B837DF2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1DC9AF0F85A0D53126A6E57 /* VoiceScribeWidget.swift in Sources */,
+				FF116FB9296CD192A8E3B450 /* VoiceScribeWidgetBundle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		295CE0D9FF03D1567E8FBFD8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = VoiceScribeWidget;
+			target = 2814AA2C84C19314D5C1A675 /* VoiceScribeWidget */;
+			targetProxy = 7D3EC6C02F1EC71F5D823C7B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -270,6 +393,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = VoiceScribeApp/VoiceScribeApp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = VoiceScribeApp/Info.plist;
@@ -300,6 +424,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = VoiceScribeApp/VoiceScribeApp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = VoiceScribeApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -321,6 +446,30 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		2515F8D1A4E170A3DBE36C67 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = VoiceScribeWidget/VoiceScribeWidget.entitlements;
+				DEVELOPMENT_TEAM = DD4997U2D3;
+				INFOPLIST_FILE = VoiceScribeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.VoiceScribeApp.widget;
+				PRODUCT_NAME = VoiceScribeWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -485,6 +634,29 @@
 			};
 			name = Release;
 		};
+		88A7E76F1F66B6220F21B11F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = VoiceScribeWidget/VoiceScribeWidget.entitlements;
+				DEVELOPMENT_TEAM = DD4997U2D3;
+				INFOPLIST_FILE = VoiceScribeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.VoiceScribeApp.widget;
+				PRODUCT_NAME = VoiceScribeWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -493,6 +665,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		252942B2A5188FAAA7064682 /* Build configuration list for PBXNativeTarget "VoiceScribeWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				88A7E76F1F66B6220F21B11F /* Release */,
+				2515F8D1A4E170A3DBE36C67 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

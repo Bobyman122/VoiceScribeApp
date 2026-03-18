@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SummaryFormat } from '../types';
 import { deleteAudioFile } from './modelManager';
+import { syncSessionsToWidget } from './widgetSync';
 
 export interface Session {
   id: string;
@@ -32,7 +33,9 @@ export const saveSession = async (session: Omit<Session, 'id'>): Promise<Session
     ...session,
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
   };
-  await saveAll([newSession, ...sessions].slice(0, MAX_SESSIONS));
+  const updated = [newSession, ...sessions].slice(0, MAX_SESSIONS);
+  await saveAll(updated);
+  syncSessionsToWidget(updated).catch(() => {});
   return newSession;
 };
 
@@ -49,7 +52,9 @@ export const deleteSession = async (id: string): Promise<void> => {
   if (target?.audioPath) {
     await deleteAudioFile(target.audioPath).catch(() => {});
   }
-  await saveAll(sessions.filter((s) => s.id !== id));
+  const updated = sessions.filter((s) => s.id !== id);
+  await saveAll(updated);
+  syncSessionsToWidget(updated).catch(() => {});
 };
 
 export const clearAllSessions = async (): Promise<void> => {
@@ -60,4 +65,5 @@ export const clearAllSessions = async (): Promise<void> => {
       .map((s) => deleteAudioFile(s.audioPath!).catch(() => {})),
   );
   await AsyncStorage.removeItem(SESSIONS_KEY);
+  syncSessionsToWidget([]).catch(() => {});
 };

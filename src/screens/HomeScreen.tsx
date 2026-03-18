@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image, } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -161,6 +161,39 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       }
     }
   }, [isBusy, isRecording, modelsReady, settings, durationSecs, startRecording, stopRecording, transcribe, summarize, navigation, releaseWhisper, loadLlama, releaseLlama, loadWhisper]);
+
+  // Keep a stable ref to handlePress so the Linking event listener never captures a stale closure
+  const handlePressRef = useRef(handlePress);
+  useEffect(() => { handlePressRef.current = handlePress; }, [handlePress]);
+
+  // Flag set when the app is cold-launched via voicescribe://record
+  const pendingAutoRecord = useRef(false);
+
+  // Mount: check cold-start URL and subscribe to foreground URL events
+  useEffect(() => {
+    Linking.getInitialURL().then((url) => {
+      if (url === 'voicescribe://record') pendingAutoRecord.current = true;
+    });
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      if (url === 'voicescribe://record') handlePressRef.current();
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Deferred auto-record: fires once the app and models are fully ready after a cold-start URL open
+  useEffect(() => {
+    if (
+      pendingAutoRecord.current &&
+      isInitialised &&
+      !isRecording &&
+      !isBusy &&
+      !whisperLoading &&
+      !llamaLoading
+    ) {
+      pendingAutoRecord.current = false;
+      handlePressRef.current();
+    }
+  }, [isInitialised, isBusy, whisperLoading, llamaLoading, isRecording]);
 
   const isButtonDisabled = isBusy || whisperLoading || llamaLoading;
 

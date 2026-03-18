@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import ResultScreen from '../screens/ResultScreen';
@@ -15,8 +16,20 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['voicescribe://'],
+  config: {
+    screens: {
+      Home: 'home',
+      Result: 'result',
+      Settings: 'settings',
+      History: 'history',
+    },
+  },
+};
+
 const AppNavigator: React.FC = () => (
-  <NavigationContainer>
+  <NavigationContainer linking={linking}>
     <Stack.Navigator
       initialRouteName="Home"
       screenOptions={{
