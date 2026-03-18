@@ -4,3 +4,17 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'VoiceScribeApp'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url("$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo")
+        }
+        maven {
+            url("$rootDir/../node_modules/@notifee/react-native/android/libs")
+        }
+    }
+}
