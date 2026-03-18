@@ -8,7 +8,7 @@ import HistoryScreen from '../screens/HistoryScreen';
 
 export type RootStackParamList = {
   Home: undefined;
-  Result: { transcription: string; summary: string; audioPath?: string; };
+  Result: { transcription: string; summary: string; audioPath?: string; language?: string; };
   Settings: undefined;
   History: undefined;
 };

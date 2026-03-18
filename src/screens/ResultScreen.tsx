@@ -8,6 +8,7 @@ import { exportSession, ExportFormat } from '../utils/exportUtils';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useAppContext } from '../context/AppContext';
 import { THEMES } from '../constants/theme';
+import { getLanguageLabel } from '../constants/languages';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Tab = 'summary' | 'transcript';
@@ -27,7 +28,7 @@ const formatTime = (secs: number) => {
 const ResultScreen: React.FC<Props> = ({ route, navigation }) => {
   const { theme } = useAppContext();
   const t = THEMES[theme];
-  const { transcription, summary, audioPath } = route.params;
+  const { transcription, summary, audioPath, language } = route.params;
   const [activeTab, setActiveTab] = useState<Tab>('summary');
   const [showExport, setShowExport] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -67,6 +68,13 @@ const ResultScreen: React.FC<Props> = ({ route, navigation }) => {
           <Text style={[styles.backBtnText, { color: t.accentViolet }]}>‹</Text>
         </TouchableOpacity>
         <Text style={[styles.heading, { color: t.textPrimary }]}>Results</Text>
+        {language && (
+          <View style={[styles.langChip, { backgroundColor: t.bgBadge }]}>
+            <Text style={[styles.langChipText, { color: t.accentViolet }]}>
+              {language === 'auto' ? 'Auto' : getLanguageLabel(language)}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Tab bar */}
@@ -166,6 +174,8 @@ const styles = StyleSheet.create({
     right: -40,
   },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 },
+  langChip: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 'auto' },
+  langChipText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4 },
   backBtn: { marginRight: 4 },
   backBtnText: { fontSize: 36, lineHeight: 38, fontWeight: '300' },
   heading: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },

@@ -87,11 +87,14 @@ const SettingsScreen: React.FC = () => {
     ]);
   };
 
+  const RECOMMENDED_IDS = new Set(['whisper-small', 'qwen3.5-2b']);
+
   const renderModelCard = (model: ModelConfig, type: 'whisper' | 'qwen') => {
     const isSelected = type === 'whisper' ? settings.selectedWhisperModel === model.id : settings.selectedQwenModel === model.id;
     const downloaded = isModelDownloaded(model.id);
     const isDownloading = activeDownloads.has(model.id);
     const progress = downloadProgress[model.id] ?? 0;
+    const isRecommended = RECOMMENDED_IDS.has(model.id);
     const select = () => type === 'whisper'
       ? updateSettings({ selectedWhisperModel: model.id as WhisperModelId })
       : updateSettings({ selectedQwenModel: model.id as QwenModelId });
@@ -105,6 +108,11 @@ const SettingsScreen: React.FC = () => {
           <View style={styles.cardInfo}>
             <View style={styles.nameLine}>
               <Text style={[styles.modelName, { color: t.textSecondary }]}>{model.name}</Text>
+              {isRecommended && !isSelected && (
+                <View style={[styles.recommendedBadge, { backgroundColor: t.accentGreen + '22' }]}>
+                  <Text style={[styles.recommendedBadgeText, { color: t.accentGreen }]}>RECOMMENDED</Text>
+                </View>
+              )}
               {isSelected && (
                 <View style={[styles.activeBadge, { backgroundColor: t.accent + '22' }]}>
                   <Text style={[styles.activeBadgeText, { color: t.accent }]}>ACTIVE</Text>
@@ -246,6 +254,8 @@ const styles = StyleSheet.create({
   modelName: { fontSize: 15, fontWeight: '600' },
   activeBadge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
   activeBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  recommendedBadge: { borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  recommendedBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
   modelDesc: { fontSize: 13, marginTop: 2 },
   modelWarn: { color: '#f5a623', fontSize: 12, marginTop: 6 },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4 },

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -11,6 +11,7 @@ import { useRamMonitor, RamPressure } from '../hooks/useRamMonitor';
 import RecordButton from '../components/RecordButton';
 import ModelStatusBar from '../components/ModelStatusBar';
 import WaveformVisualizer from '../components/WaveformVisualizer';
+import OnboardingModal from '../components/OnboardingModal';
 import { WHISPER_MODELS, QWEN_MODELS } from '../constants/models';
 import { THEMES } from '../constants/theme';
 import { saveSession } from '../utils/sessions';
@@ -33,21 +34,13 @@ const PRESSURE_LABELS: Record<RamPressure, string> = {
 };
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { settings, isModelDownloaded, theme, toggleTheme } = useAppContext();
+  const { settings, isModelDownloaded, theme, toggleTheme, hasCompletedOnboarding, completeOnboarding, isInitialised } = useAppContext();
   const t = THEMES[theme];
-  const { isRecording, durationSecs, startRecording, stopRecording } = useAudioRecorder();
+  const { isRecording, isPaused, durationSecs, startRecording, stopRecording, pauseRecording, resumeRecording } = useAudioRecorder();
   const { isLoadingModel: whisperLoading, isTranscribing, isModelLoaded: whisperIsLoaded, loadModel: loadWhisper, transcribe, releaseModel: releaseWhisper } = useWhisper();
   const { isLoadingModel: llamaLoading, isSummarizing, streamingText, isModelLoaded: llamaIsLoaded, loadModel: loadLlama, summarize, releaseModel: releaseLlama } = useLlama();
   const [status, setStatus] = useState('Ready to record');
   const [isBusy, setIsBusy] = useState(false);
-  const transcribingPhrases = [
-    'Transcribing...', 'Scribing...', 'Note-ifying...', 'Word-wrangling...',
-    'Ear-to-texting...', 'Speechifying...', 'Sound-to-glyphing...', 'Ink-ifying...',
-    'Verbatim-ing...', 'Syllable-crunching...', 'Quote-capturing...',
-  ];
-  const phraseTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const statusOpacity = useRef(new Animated.Value(1)).current;
-  const usedIndicesRef = useRef<number[]>([]);
   const ram = useRamMonitor();
   const pressureColors = PRESSURE_COLORS(t);
 
@@ -73,48 +66,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     })();
   }, [settings.selectedWhisperModel, settings.selectedQwenModel, settings.lazyLoadModels, modelsReady]);
 
-  const pickRandomPhrase = () => {
-    // Pick a random phrase avoiding recent repeats
-    let available = transcribingPhrases
-      .map((_, i) => i)
-      .filter((i) => !usedIndicesRef.current.includes(i));
-    if (available.length === 0) {
-      usedIndicesRef.current = [];
-      available = transcribingPhrases.map((_, i) => i);
-    }
-    const idx = available[Math.floor(Math.random() * available.length)];
-    usedIndicesRef.current = [...usedIndicesRef.current.slice(-3), idx];
-    return transcribingPhrases[idx];
-  };
-
-  const animateToNextPhrase = () => {
-    Animated.timing(statusOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start(() => {
-      setStatus(pickRandomPhrase());
-      Animated.timing(statusOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-    });
-  };
-
-  useEffect(() => {
-    if (isTranscribing) {
-      usedIndicesRef.current = [];
-      statusOpacity.setValue(0);
-      setStatus(pickRandomPhrase());
-      Animated.timing(statusOpacity, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-      phraseTimerRef.current = setInterval(animateToNextPhrase, 2200);
-    } else {
-      if (phraseTimerRef.current) {
-        clearInterval(phraseTimerRef.current);
-        phraseTimerRef.current = null;
-      }
-      statusOpacity.setValue(1);
-    }
-    return () => {
-      if (phraseTimerRef.current) {
-        clearInterval(phraseTimerRef.current);
-        phraseTimerRef.current = null;
-      }
-    };
-  }, [isTranscribing]);
 
   const formatDuration = (secs: number): string => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -155,7 +106,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           summaryFormat: settings.summaryFormat, whisperModel: settings.selectedWhisperModel,
           qwenModel: settings.selectedQwenModel, language: settings.language, audioPath,
         });
-        navigation.navigate('Result', { transcription, summary, audioPath });
+        navigation.navigate('Result', { transcription, summary, audioPath, language: settings.language });
         if (settings.lazyLoadModels) {
           // Release Llama and reload Whisper so the app is ready for the next recording
           releaseLlama().catch(() => {});
@@ -271,28 +222,61 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Main record area */}
       <View style={styles.centre}>
-        <View style={styles.statusRow}>
-          {isTranscribing && <ActivityIndicator color={t.accentViolet} size="small" style={styles.statusSpinner} />}
-          <Animated.Text style={[styles.statusText, { color: t.textMuted, opacity: statusOpacity }]}>{status}</Animated.Text>
-        </View>
-        {isRecording && <Text style={[styles.timer, { color: t.textPrimary }]}>{formatDuration(durationSecs)}</Text>}
-
-        <WaveformVisualizer isActive={isRecording} color={isRecording ? t.accent : t.accentViolet} />
-
-        {isSummarizing && (
-          <View style={styles.progressColumn}>
-            <View style={styles.progressRow}>
-              <ActivityIndicator color={t.accentViolet} size="small" />
-              <Text style={[styles.progressLabel, { color: t.textMuted }]}>Summarising...</Text>
+        {/* Status / two-step processing indicator */}
+        {(isTranscribing || isSummarizing) ? (
+          <View style={styles.processingContainer}>
+            <View style={styles.processingStep}>
+              {isTranscribing
+                ? <ActivityIndicator color={t.accentViolet} size="small" />
+                : <View style={[styles.processingStepDone, { backgroundColor: t.accentGreen }]}><Text style={styles.processingCheckmark}>✓</Text></View>
+              }
+              <Text style={[styles.processingLabel, { color: isTranscribing ? t.textSecondary : t.accentGreen }]}>
+                Transcribing
+              </Text>
             </View>
-            {streamingText.length > 0 && (
-              <Text style={[styles.streamPreview, { color: t.textSecondary }]} numberOfLines={4}>{streamingText}</Text>
+            <View style={[styles.processingConnector, { backgroundColor: isSummarizing ? t.accentViolet : t.divider }]} />
+            <View style={styles.processingStep}>
+              {isSummarizing
+                ? <ActivityIndicator color={t.accentViolet} size="small" />
+                : <View style={[styles.processingStepPending, { borderColor: t.divider }]}><Text style={[styles.processingStepNum, { color: t.textFaint }]}>2</Text></View>
+              }
+              <Text style={[styles.processingLabel, { color: isSummarizing ? t.textSecondary : t.textFaint }]}>
+                Summarising
+              </Text>
+            </View>
+            {isSummarizing && streamingText.length > 0 && (
+              <Text style={[styles.streamPreview, { color: t.textSecondary }]} numberOfLines={3}>{streamingText}</Text>
             )}
+          </View>
+        ) : (
+          <View style={styles.statusRow}>
+            <Text style={[styles.statusText, { color: t.textMuted }]}>{status}</Text>
           </View>
         )}
 
+        {isRecording && <Text style={[styles.timer, { color: t.textPrimary }]}>{formatDuration(durationSecs)}</Text>}
+
+        <WaveformVisualizer isActive={isRecording && !isPaused} color={isRecording ? t.accent : t.accentViolet} />
+
         <RecordButton isRecording={isRecording} isDisabled={isButtonDisabled} onPress={handlePress} />
-        <Text style={[styles.hint, { color: t.textFaint }]}>{isRecording ? 'Tap to stop & process' : 'Tap to start recording'}</Text>
+
+        {/* Pause / Resume button — only visible during active recording */}
+        {isRecording && !isBusy && (
+          <TouchableOpacity
+            style={[styles.pauseBtn, { backgroundColor: t.bgCard, borderColor: t.accentViolet }]}
+            onPress={isPaused ? resumeRecording : pauseRecording}
+            activeOpacity={0.8}>
+            <Text style={[styles.pauseBtnText, { color: t.accentViolet }]}>
+              {isPaused ? '▶  Resume' : '⏸  Pause'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <Text style={[styles.hint, { color: t.textFaint }]}>
+          {isRecording
+            ? (isPaused ? 'Paused — tap resume or stop' : 'Tap to stop & process')
+            : 'Tap to start recording'}
+        </Text>
 
         {!modelsReady && (
           <TouchableOpacity style={[styles.warningBanner, { backgroundColor: t.bgWarning, borderColor: t.accentViolet }]} onPress={() => navigation.navigate('Settings')}>
@@ -300,6 +284,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
+
+      <OnboardingModal
+        visible={isInitialised && !hasCompletedOnboarding}
+        theme={theme}
+        onComplete={completeOnboarding}
+        onGoToSettings={() => navigation.navigate('Settings')}
+      />
     </SafeAreaView>
   );
 };
@@ -367,14 +358,26 @@ const styles = StyleSheet.create({
   cardDivider: { width: 1, height: 32, marginHorizontal: 8 },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
   statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  statusSpinner: { marginRight: 8 },
   statusText: { fontSize: 15, textAlign: 'center' },
   timer: { fontSize: 56, fontWeight: '200', marginBottom: 8, letterSpacing: -1 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  progressColumn: { alignItems: 'center', marginBottom: 10 },
-  progressLabel: { fontSize: 14 },
-  streamPreview: { fontSize: 13, fontStyle: 'italic', textAlign: 'center', marginTop: 6, maxWidth: 300 },
-  hint: { fontSize: 14, marginTop: 16 },
+  processingContainer: { alignItems: 'center', marginBottom: 6, width: '100%', maxWidth: 300 },
+  processingStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  processingLabel: { fontSize: 15, fontWeight: '600' },
+  processingStepDone: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  processingCheckmark: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  processingStepPending: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  processingStepNum: { fontSize: 11, fontWeight: '700' },
+  processingConnector: { width: 40, height: 2, marginVertical: 8, borderRadius: 1 },
+  streamPreview: { fontSize: 13, fontStyle: 'italic', textAlign: 'center', marginTop: 12, maxWidth: 300, lineHeight: 20 },
+  pauseBtn: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  pauseBtnText: { fontSize: 14, fontWeight: '600' },
+  hint: { fontSize: 14, marginTop: 12 },
   warningBanner: {
     marginTop: 28,
     borderRadius: 14,

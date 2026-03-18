@@ -21,6 +21,8 @@ interface AppContextType {
   isInitialised: boolean;
   theme: ThemeMode;
   toggleTheme: () => void;
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -34,6 +36,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 const SETTINGS_KEY = '@voicescribe_settings';
 const DOWNLOADED_KEY = '@voicescribe_downloaded';
 const THEME_KEY = '@voicescribe_theme';
+const ONBOARDING_KEY = '@voicescribe_onboarding';
 
 const AppContext = createContext<AppContextType | null>(null);
 
@@ -42,20 +45,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [downloadedModels, setDownloadedModels] = useState<Set<string>>(new Set());
   const [isInitialised, setIsInitialised] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [savedSettings, actualDownloads, savedTheme] = await Promise.all([
+        const [savedSettings, actualDownloads, savedTheme, savedOnboarding] = await Promise.all([
           AsyncStorage.getItem(SETTINGS_KEY),
           checkAllDownloadedModels(),
           AsyncStorage.getItem(THEME_KEY),
+          AsyncStorage.getItem(ONBOARDING_KEY),
         ]);
         if (savedSettings) {
           setSettings(JSON.parse(savedSettings));
         }
         if (savedTheme === 'light' || savedTheme === 'dark') {
           setTheme(savedTheme);
+        }
+        if (savedOnboarding === 'true') {
+          setHasCompletedOnboarding(true);
         }
         const newSet = new Set<string>(actualDownloads);
         setDownloadedModels(newSet);
@@ -107,6 +115,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, []);
 
+  const completeOnboarding = useCallback(() => {
+    setHasCompletedOnboarding(true);
+    AsyncStorage.setItem(ONBOARDING_KEY, 'true').catch(console.error);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -118,6 +131,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isInitialised,
         theme,
         toggleTheme,
+        hasCompletedOnboarding,
+        completeOnboarding,
       }}
     >
       {children}

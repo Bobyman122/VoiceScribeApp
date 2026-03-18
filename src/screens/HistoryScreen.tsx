@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -108,6 +108,8 @@ const SessionCard: React.FC<CardProps> = ({ session, isPlayingThis, playback, on
   );
 };
 
+type DateFilter = 'all' | 'today' | 'week';
+
 const HistoryScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useAppContext();
   const t = THEMES[theme];
@@ -116,6 +118,8 @@ const HistoryScreen: React.FC<Props> = ({ navigation }) => {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const { state: playback, togglePlayPause, stop: stopAudio } = useAudioPlayer();
   const [playingSessionId, setPlayingSessionId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
   useFocusEffect(
     useCallback(() => {
@@ -128,6 +132,20 @@ const HistoryScreen: React.FC<Props> = ({ navigation }) => {
       return () => { active = false; };
     }, []),
   );
+
+  const filteredSessions = useMemo(() => {
+    const now = Date.now();
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(now - 7 * 24 * 60 * 60 * 1000);
+
+    return sessions.filter((s) => {
+      if (dateFilter === 'today' && s.createdAt < todayStart.getTime()) return false;
+      if (dateFilter === 'week' && s.createdAt < weekStart.getTime()) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return s.summary.toLowerCase().includes(q) || s.transcription.toLowerCase().includes(q);
+    });
+  }, [sessions, searchQuery, dateFilter]);
 
   const handleDelete = (session: Session) => {
     Alert.alert('Delete recording', 'Remove this recording from history?', [
@@ -192,18 +210,52 @@ const HistoryScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         )}
       </View>
-      <FlatList data={sessions} keyExtractor={(item) => item.id} contentContainerStyle={styles.list}
+
+      {sessions.length > 0 && (
+        <View style={styles.searchArea}>
+          <View style={[styles.searchBar, { backgroundColor: t.bgCard, borderColor: t.divider }]}>
+            <Text style={[styles.searchIcon, { color: t.textFaint }]}>🔍</Text>
+            <TextInput
+              style={[styles.searchInput, { color: t.textSecondary }]}
+              placeholder="Search transcripts..."
+              placeholderTextColor={t.textFaint}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+          </View>
+          <View style={styles.filterChips}>
+            {(['all', 'today', 'week'] as DateFilter[]).map((f) => (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterChip, { backgroundColor: dateFilter === f ? t.accent : t.bgCard }]}
+                onPress={() => setDateFilter(f)}>
+                <Text style={[styles.filterChipText, { color: dateFilter === f ? '#fff' : t.textMuted }]}>
+                  {f === 'all' ? 'All' : f === 'today' ? 'Today' : 'This Week'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <FlatList data={filteredSessions} keyExtractor={(item) => item.id} contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🎙</Text>
-            <Text style={[styles.emptyText, { color: t.textSecondary }]}>No recordings yet</Text>
-            <Text style={[styles.emptySubtext, { color: t.textFaint }]}>Your transcription history will appear here</Text>
+            <Text style={styles.emptyIcon}>{sessions.length > 0 ? '🔍' : '🎙'}</Text>
+            <Text style={[styles.emptyText, { color: t.textSecondary }]}>
+              {sessions.length > 0 ? 'No matching recordings' : 'No recordings yet'}
+            </Text>
+            <Text style={[styles.emptySubtext, { color: t.textFaint }]}>
+              {sessions.length > 0 ? 'Try a different search or filter' : 'Your transcription history will appear here'}
+            </Text>
           </View>
         }
         renderItem={({ item }) => (
           <SessionCard session={item} isPlayingThis={playingSessionId === item.id} playback={playback}
-            onOpen={() => navigation.navigate('Result', { transcription: item.transcription, summary: item.summary, audioPath: item.audioPath })}
+            onOpen={() => navigation.navigate('Result', { transcription: item.transcription, summary: item.summary, audioPath: item.audioPath, language: item.language })}
             onDelete={() => handleDelete(item)} onTogglePlay={() => handleTogglePlay(item)}
             onStopAudio={handleStopAudio} onExport={(fmt) => handleExport(item, fmt)} exportingId={exportingId} t={t} />
         )} />
@@ -244,6 +296,35 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   clearBtnText: { fontSize: 13, fontWeight: '600' },
+  searchArea: { paddingHorizontal: 20, paddingBottom: 12, gap: 10 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  searchIcon: { fontSize: 14 },
+  searchInput: { flex: 1, fontSize: 14, padding: 0 },
+  filterChips: { flexDirection: 'row', gap: 8 },
+  filterChip: {
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  filterChipText: { fontSize: 12, fontWeight: '600' },
   list: { paddingHorizontal: 20, paddingBottom: 48 },
   card: {
     borderRadius: 20,

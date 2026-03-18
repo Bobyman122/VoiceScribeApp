@@ -19,6 +19,7 @@ const requestAndroidPermissions = async (): Promise<boolean> => {
 
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [durationSecs, setDurationSecs] = useState(0);
   const savedPath = useRef('');
 
@@ -54,13 +55,24 @@ export const useAudioRecorder = () => {
     setIsRecording(true);
   }, []);
 
+  const pauseRecording = useCallback(async (): Promise<void> => {
+    await player.pauseRecorder();
+    setIsPaused(true);
+  }, []);
+
+  const resumeRecording = useCallback(async (): Promise<void> => {
+    await player.resumeRecorder();
+    setIsPaused(false);
+  }, []);
+
   const stopRecording = useCallback(async (): Promise<string> => {
     const result = await player.stopRecorder();
     player.removeRecordBackListener();
     setIsRecording(false);
+    setIsPaused(false);
     setDurationSecs(0);
     return result && result !== 'Already stopped' ? result : savedPath.current;
   }, []);
 
-  return { isRecording, durationSecs, startRecording, stopRecording };
+  return { isRecording, isPaused, durationSecs, startRecording, pauseRecording, resumeRecording, stopRecording };
 };

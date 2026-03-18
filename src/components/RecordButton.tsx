@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Animated, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Animated, StyleSheet, View, Vibration } from 'react-native';
 
 interface RecordButtonProps {
   isRecording: boolean;
@@ -31,8 +31,17 @@ const RecordButton: React.FC<RecordButtonProps> = ({ isRecording, isDisabled, on
   const shadowColor = isDisabled ? '#000' : '#f26e7e';
   const ringColor = isRecording ? 'rgba(242,110,126,0.35)' : 'rgba(168,154,240,0.25)';
 
+  const handlePress = () => {
+    if (isRecording) {
+      Vibration.vibrate([0, 40, 80, 40]);
+    } else {
+      Vibration.vibrate(50);
+    }
+    onPress();
+  };
+
   return (
-    <TouchableOpacity onPress={onPress} disabled={isDisabled} activeOpacity={0.85}
+    <TouchableOpacity onPress={handlePress} disabled={isDisabled} activeOpacity={0.85}
       accessibilityLabel={isRecording ? 'Stop recording' : 'Start recording'}
       accessibilityRole="button">
       <Animated.View style={[styles.outerRing, { borderColor: ringColor, transform: [{ scale: pulseAnim }] }]}>
