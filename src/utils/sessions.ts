@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SummaryFormat } from '../types';
+import { SummaryFormat, WordTimestamp } from '../types';
 import { deleteAudioFile } from './modelManager';
 
 export interface Session {
@@ -13,6 +13,7 @@ export interface Session {
   qwenModel: string;
   language: string;
   audioPath?: string;
+  wordTimestamps?: WordTimestamp[];
 }
 
 const SESSIONS_KEY = '@voicescribe_sessions';

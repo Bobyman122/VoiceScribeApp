@@ -203,7 +203,7 @@ const HistoryScreen: React.FC<Props> = ({ navigation }) => {
         }
         renderItem={({ item }) => (
           <SessionCard session={item} isPlayingThis={playingSessionId === item.id} playback={playback}
-            onOpen={() => navigation.navigate('Result', { transcription: item.transcription, summary: item.summary, audioPath: item.audioPath })}
+            onOpen={() => navigation.navigate('Result', { transcription: item.transcription, summary: item.summary, audioPath: item.audioPath, wordTimestamps: item.wordTimestamps })}
             onDelete={() => handleDelete(item)} onTogglePlay={() => handleTogglePlay(item)}
             onStopAudio={handleStopAudio} onExport={(fmt) => handleExport(item, fmt)} exportingId={exportingId} t={t} />
         )} />

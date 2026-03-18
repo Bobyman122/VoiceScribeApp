@@ -5,10 +5,11 @@ import HomeScreen from '../screens/HomeScreen';
 import ResultScreen from '../screens/ResultScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import { WordTimestamp } from '../types';
 
 export type RootStackParamList = {
   Home: undefined;
-  Result: { transcription: string; summary: string; audioPath?: string; };
+  Result: { transcription: string; summary: string; audioPath?: string; wordTimestamps?: WordTimestamp[] };
   Settings: undefined;
   History: undefined;
 };

@@ -134,7 +134,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       try {
         setStatus('Stopping...');
         const audioCachePath = await stopRecording();
-        const transcription = await transcribe(audioCachePath, settings.language);
+        const { text: transcription, wordTimestamps } = await transcribe(audioCachePath, settings.language);
         if (!transcription || transcription.length < 3) {
           setStatus('No speech detected - try again');
           return;
@@ -154,8 +154,9 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           createdAt: Date.now(), durationSecs, transcription, summary,
           summaryFormat: settings.summaryFormat, whisperModel: settings.selectedWhisperModel,
           qwenModel: settings.selectedQwenModel, language: settings.language, audioPath,
+          wordTimestamps,
         });
-        navigation.navigate('Result', { transcription, summary, audioPath });
+        navigation.navigate('Result', { transcription, summary, audioPath, wordTimestamps });
         if (settings.lazyLoadModels) {
           // Release Llama and reload Whisper so the app is ready for the next recording
           releaseLlama().catch(() => {});

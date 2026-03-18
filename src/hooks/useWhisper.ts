@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { initWhisper, WhisperContext } from 'whisper.rn';
-import { WhisperModelId } from '../types';
+import { WhisperModelId, WordTimestamp } from '../types';
 import { WHISPER_MODELS } from '../constants/models';
 import { getModelPath } from '../utils/modelManager';
 
@@ -32,15 +32,17 @@ export const useWhisper = () => {
   }, []);
 
   const transcribe = useCallback(
-    async (audioPath: string, language = 'auto'): Promise<string> => {
+    async (audioPath: string, language = 'auto'): Promise<{ text: string; wordTimestamps: WordTimestamp[] }> => {
       if (!ctxRef.current) throw new Error('Whisper model not loaded');
 
       setIsTranscribing(true);
       try {
         const { promise } = ctxRef.current.transcribe(audioPath, {
           language: language === 'auto' ? undefined : language,
-          maxLen: 0,
-          tokenTimestamps: false,
+          // maxLen: 1 forces whisper to emit one segment per word, giving us
+          // per-word t0/t1 timestamps (t0/t1 are in centiseconds).
+          maxLen: 1,
+          tokenTimestamps: true,
           // Greedy single-candidate decoding — beam search with bestOf > 1 can
           // amplify repetition loops; greedy is more robust for short recordings.
           beamSize: 1,
@@ -57,12 +59,22 @@ export const useWhisper = () => {
           prompt: '',
           maxThreads: 4,
         });
-        const { result } = await promise;
+        const { result, segments } = await promise;
         const text = result.trim();
         // Detect hallucination: if any single word repeats more than 6 times
         // consecutively the output is a repetition loop — discard it.
-        if (/\b(\w+)(\s+\1){6,}/i.test(text)) return '';
-        return text;
+        if (/\b(\w+)(\s+\1){6,}/i.test(text)) return { text: '', wordTimestamps: [] };
+
+        // Build word-level timestamps from segments (t0/t1 are in centiseconds).
+        const wordTimestamps: WordTimestamp[] = (segments ?? [])
+          .map((seg) => ({
+            word: seg.text.trim(),
+            startSec: seg.t0 / 100,
+            endSec: seg.t1 / 100,
+          }))
+          .filter((w) => w.word.length > 0);
+
+        return { text, wordTimestamps };
       } finally {
         setIsTranscribing(false);
       }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Modal, ActivityIndicator } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { exportSession, ExportFormat } from '../utils/exportUtils';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useAppContext } from '../context/AppContext';
 import { THEMES } from '../constants/theme';
+import TimestampedTranscript from '../components/TimestampedTranscript';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 type Tab = 'summary' | 'transcript';
@@ -27,12 +28,23 @@ const formatTime = (secs: number) => {
 const ResultScreen: React.FC<Props> = ({ route, navigation }) => {
   const { theme } = useAppContext();
   const t = THEMES[theme];
-  const { transcription, summary, audioPath } = route.params;
+  const { transcription, summary, audioPath, wordTimestamps } = route.params;
   const [activeTab, setActiveTab] = useState<Tab>('summary');
   const [showExport, setShowExport] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const { state: playback, togglePlayPause, stop: stopAudio } = useAudioPlayer();
+  const { state: playback, play, seekTo, togglePlayPause, stop: stopAudio } = useAudioPlayer();
   const currentText = activeTab === 'summary' ? summary : transcription;
+
+  const handleWordPress = useCallback(
+    async (sec: number) => {
+      if (!audioPath) return;
+      if (!playback.isPlaying && !playback.isPaused) {
+        await play(audioPath);
+      }
+      await seekTo(sec);
+    },
+    [audioPath, playback.isPlaying, playback.isPaused, play, seekTo],
+  );
 
   const handleCopy = () => {
     Clipboard.setString(currentText);
@@ -107,9 +119,18 @@ const ResultScreen: React.FC<Props> = ({ route, navigation }) => {
       )}
 
       {/* Content */}
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.body, { color: t.textSecondary }]}>{currentText}</Text>
-      </ScrollView>
+      {activeTab === 'transcript' && wordTimestamps && wordTimestamps.length > 0 ? (
+        <TimestampedTranscript
+          words={wordTimestamps}
+          currentSec={playback.currentSecs}
+          onWordPress={handleWordPress}
+          theme={theme}
+        />
+      ) : (
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <Text style={[styles.body, { color: t.textSecondary }]}>{currentText}</Text>
+        </ScrollView>
+      )}
 
       {/* Action bar */}
       <View style={[styles.actions, { borderTopColor: t.divider }]}>
