@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -42,6 +42,37 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [status, setStatus] = useState('Ready to record');
   const [isBusy, setIsBusy] = useState(false);
   const ram = useRamMonitor();
+
+  const isProcessing = isTranscribing || isSummarizing;
+  const ripple1 = useRef(new Animated.Value(0)).current;
+  const ripple2 = useRef(new Animated.Value(0)).current;
+  const ripple3 = useRef(new Animated.Value(0)).current;
+  const rippleAnims = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    const makeRipple = (val: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(val, { toValue: 1, duration: 1200, useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      );
+
+    if (isProcessing) {
+      rippleAnims.current = Animated.parallel([
+        makeRipple(ripple1, 0),
+        makeRipple(ripple2, 400),
+        makeRipple(ripple3, 800),
+      ]);
+      rippleAnims.current.start();
+    } else {
+      rippleAnims.current?.stop();
+      ripple1.setValue(0);
+      ripple2.setValue(0);
+      ripple3.setValue(0);
+    }
+  }, [isProcessing]);
   const pressureColors = PRESSURE_COLORS(t);
 
   const whisperModel = WHISPER_MODELS.find((m) => m.id === settings.selectedWhisperModel);
@@ -291,6 +322,30 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         onComplete={completeOnboarding}
         onGoToSettings={() => navigation.navigate('Settings')}
       />
+
+      {/* Animated logo at bottom */}
+      <View style={styles.logoContainer}>
+        <View style={styles.logoWrapper}>
+          {[ripple1, ripple2, ripple3].map((ripple, i) => (
+            <Animated.View
+              key={i}
+              style={[
+                styles.rippleRing,
+                {
+                  borderColor: t.accentViolet,
+                  opacity: ripple.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.6, 0] }),
+                  transform: [{ scale: ripple.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
+                },
+              ]}
+            />
+          ))}
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -406,6 +461,28 @@ const styles = StyleSheet.create({
   ramLegendText: { fontSize: 11 },
   ramLegendRight: { alignItems: 'flex-end', marginLeft: 8 },
   ramUsageFigure: { fontSize: 15, fontWeight: '700', lineHeight: 18 },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 12,
+  },
+  logoWrapper: {
+    width: 96,
+    height: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rippleRing: {
+    position: 'absolute',
+    width: 96,
+    height: 96,
+    borderRadius: 26,
+    borderWidth: 2,
+  },
+  logo: {
+    width: 96,
+    height: 96,
+  },
 });
 
 export default HomeScreen;
