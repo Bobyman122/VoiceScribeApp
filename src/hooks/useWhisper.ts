@@ -37,6 +37,10 @@ export const useWhisper = () => {
 
       setIsTranscribing(true);
       try {
+        const TIMEOUT_MS = 120_000; // 2 min hard limit — prevents infinite hang
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Transcription timed out')), TIMEOUT_MS)
+        );
         const { promise } = ctxRef.current.transcribe(audioPath, {
           language: language === 'auto' ? undefined : language,
           maxLen: 0,
@@ -57,7 +61,7 @@ export const useWhisper = () => {
           prompt: '',
           maxThreads: 4,
         });
-        const { result } = await promise;
+        const { result } = await Promise.race([promise, timeout]);
         const text = result.trim();
         // Detect hallucination: if any single word repeats more than 6 times
         // consecutively the output is a repetition loop — discard it.

@@ -71,7 +71,8 @@ export const useAudioRecorder = () => {
     setIsRecording(false);
     setIsPaused(false);
     setDurationSecs(0);
-    return result && result !== 'Already stopped' ? result : savedPath.current;
+    const rawPath = result && result !== 'Already stopped' ? result : savedPath.current;
+    return rawPath.replace(/^file:\/\//, '').replace(/^file:\/(?!\/)/, '/');
   }, []);
 
   return { isRecording, isPaused, durationSecs, startRecording, pauseRecording, resumeRecording, stopRecording };

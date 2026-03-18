@@ -95,7 +95,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - NitroModules (0.35.1):
+  - NitroModules (0.29.8):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2336,7 +2336,7 @@ SPEC CHECKSUMS:
   HtmlToPdf: 9721ff8ee35b34262c801bfd04b7c0d877d589e6
   llama-rn: 07b1c0399c00fd72a04410f25fecabe1fe6604c1
   NitroAudioRecorderPlayer: 3d0f51dcf18faf4a55cf607deab58b5fe92a9bb1
-  NitroModules: ef5b7b0085188e3e32e0e43d186590dbb3a87f5f
+  NitroModules: c37ed7fb8c8194f2c79e0f7ae5b623e072d4cea7
   RCTDeprecation: af44b104091a34482596cd9bd7e8d90c4e9b4bd7
   RCTRequired: bb77b070f75f53398ce43c0aaaa58337cebe2bf6
   RCTSwiftUI: afc0a0a635860da1040a0b894bfd529da06d7810

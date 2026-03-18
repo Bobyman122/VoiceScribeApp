@@ -16,6 +16,7 @@ import { WHISPER_MODELS, QWEN_MODELS } from '../constants/models';
 import { THEMES } from '../constants/theme';
 import { saveSession } from '../utils/sessions';
 import { persistAudioFile } from '../utils/modelManager';
+import { convertToWavIfNeeded } from '../utils/audioConverter';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>; };
 
@@ -115,7 +116,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       setIsBusy(true);
       try {
         setStatus('Stopping...');
-        const audioCachePath = await stopRecording();
+        const rawAudioPath = await stopRecording();
+        const audioCachePath = await convertToWavIfNeeded(rawAudioPath);
         const transcription = await transcribe(audioCachePath, settings.language);
         if (!transcription || transcription.length < 3) {
           setStatus('No speech detected - try again');

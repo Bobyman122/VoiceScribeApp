@@ -6,6 +6,7 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppSettings, WhisperModelId, QwenModelId, SummaryFormat } from '../types';
 import { checkAllDownloadedModels } from '../utils/modelManager';
@@ -30,7 +31,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   selectedQwenModel: 'qwen3.5-2b',
   summaryFormat: 'bullets',
   language: 'auto',
-  lazyLoadModels: false,
+  lazyLoadModels: Platform.OS === 'android',
 };
 
 const SETTINGS_KEY = '@voicescribe_settings';
