@@ -44,7 +44,7 @@ class AudioNormalizer: NSObject {
 
       // Target peak = 0.85 of full scale; max gain = 30x
       let targetPeak: Float = 0.85
-      let maxGain: Float = 30.0
+      let maxGain: Float = 10.0
 
       if peak > 0 && peak < targetPeak {
         let gain = min(targetPeak / peak, maxGain)
