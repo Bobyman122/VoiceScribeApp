@@ -16,3 +16,15 @@ export const convertToWavIfNeeded = async (audioPath: string): Promise<string> =
 
   return wavPath;
 };
+
+// Boost quiet recordings so Whisper can reliably detect speech.
+// On iOS uses a native AVAudioEngine pass; on Android is a no-op.
+export const normalizeAudioGain = async (audioPath: string): Promise<string> => {
+  if (Platform.OS !== 'ios') return audioPath;
+  try {
+    const normalized: string = await NativeModules.AudioNormalizer.normalizeWav(audioPath);
+    return normalized;
+  } catch {
+    return audioPath;
+  }
+};
