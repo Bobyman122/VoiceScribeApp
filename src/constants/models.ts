@@ -81,7 +81,9 @@ type ChatMessage = { role: string; content: string };
 
 const buildMessages = (userContent: string): ChatMessage[] => [
   { role: 'system', content: SYSTEM_PROMPT },
-  { role: 'user', content: userContent },
+  // /no_think is the Qwen3 documented way to suppress thinking mode via prompt,
+  // as a fallback in case enable_thinking: false is not honoured by the runtime.
+  { role: 'user', content: `/no_think\n\n${userContent}` },
 ];
 
 export const SUMMARY_MESSAGES: Record<SummaryFormat, (text: string) => ChatMessage[]> = {

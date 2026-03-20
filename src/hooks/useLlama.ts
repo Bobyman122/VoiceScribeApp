@@ -58,7 +58,7 @@ export const useLlama = () => {
             messages,
             jinja: true,
             enable_thinking: false,
-            n_predict: 512,
+            n_predict: 1024,
             temperature: 0.7,
             top_k: 40,
             top_p: 0.9,
@@ -80,7 +80,11 @@ export const useLlama = () => {
           },
         );
 
-        const cleaned = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+        // Strip complete think blocks first, then any incomplete one that hit the token limit
+        const cleaned = result.text
+          .replace(/<think>[\s\S]*?<\/think>/g, '')
+          .replace(/<think>[\s\S]*/g, '')
+          .trim();
         // Detect token repetition loops and discard
         if (/\b(\w+)(\s+\1){6,}/i.test(cleaned)) return '';
         return cleaned;
