@@ -1,8 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { initWhisper, WhisperContext } from 'whisper.rn';
+import RNFS from 'react-native-fs';
 import { WhisperModelId } from '../types';
 import { WHISPER_MODELS } from '../constants/models';
 import { getModelPath } from '../utils/modelManager';
+
+// A valid audio file with real speech at 16kHz 16-bit mono will be at least
+// 32KB even for a 1-second recording (16000 * 2 bytes = 32KB/sec).
+// Files smaller than this are silent, empty, or corrupt — don't send to Whisper.
+const MIN_AUDIO_BYTES = 32_000;
 
 export const useWhisper = () => {
   const [isLoadingModel, setIsLoadingModel] = useState(false);
@@ -37,6 +43,14 @@ export const useWhisper = () => {
 
       setIsTranscribing(true);
       try {
+        // Guard: refuse to transcribe silent/corrupt/empty files
+        try {
+          const stat = await RNFS.stat(audioPath);
+          if (Number(stat.size) < MIN_AUDIO_BYTES) return '';
+        } catch {
+          return '';
+        }
+
         const TIMEOUT_MS = 120_000; // 2 min hard limit — prevents infinite hang
         const timeout = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Transcription timed out')), TIMEOUT_MS)
@@ -83,6 +97,15 @@ export const useWhisper = () => {
           /\[?\(?silence\)?\]?/i,
           /www\.\S+/i,
           /copyright\s+\d{4}/i,
+          // Additional hallucinations common on background noise / quiet rooms
+          /you(?:'re| are) watching/i,
+          /don'?t forget to (like|subscribe|comment)/i,
+          /\[?\(?background noise\)?\]?/i,
+          /\[?\(?inaudible\)?\]?/i,
+          /\[?\(?unintelligible\)?\]?/i,
+          /this (video|episode|podcast) (is|was)/i,
+          /foreign language/i,
+          /\[?\(?speaking [a-z]+ language\)?\]?/i,
         ];
         if (HALLUCINATIONS.some(re => re.test(text))) return '';
 
