@@ -28,7 +28,7 @@ export const useLlama = () => {
       ctxRef.current = await initLlama({
         model: getModelPath(model.filename),
         use_mlock: true,
-        n_ctx: 2048,
+        n_ctx: 4096,
         n_gpu_layers: 1,
       });
       loadedId.current = modelId;
@@ -48,10 +48,21 @@ export const useLlama = () => {
         // Clear the KV cache so previous completions don't pollute this call.
         await ctxRef.current.clearCache(true);
 
+        // Guard against context overflow: cap transcript at ~3000 tokens worth of text.
+        // If the transcript is too long, keep the first 2/3 + last 1/3 so the model
+        // always sees the instructions, the start of the recording, and the end.
+        const MAX_TRANSCRIPT_CHARS = 9000;
+        let safeText = text;
+        if (text.length > MAX_TRANSCRIPT_CHARS) {
+          const head = text.slice(0, Math.floor(MAX_TRANSCRIPT_CHARS * 0.67));
+          const tail = text.slice(-Math.floor(MAX_TRANSCRIPT_CHARS * 0.33));
+          safeText = `${head}\n\n[...recording continues...]\n\n${tail}`;
+        }
+
         // Use the messages API with Jinja so the model applies its own chat template
         // correctly — manually constructing <|im_start|> tokens causes the model to
         // misinterpret the input and generate unrelated output.
-        const messages = SUMMARY_MESSAGES[format](text);
+        const messages = SUMMARY_MESSAGES[format](safeText);
 
         const result = await ctxRef.current.completion(
           {
