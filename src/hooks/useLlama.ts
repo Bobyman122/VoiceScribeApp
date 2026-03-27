@@ -86,13 +86,14 @@ export const useLlama = () => {
             dry_penalty_last_n: -1,
             stop: ['<|im_end|>', '<|im_start|>'],
           },
-          (data: { token: string }) => {
-            setStreamingText((prev) => prev + data.token);
+          (data) => {
+            setStreamingText((prev) => prev + (data.content ?? data.token));
           },
         );
 
-        // Strip complete think blocks first, then any incomplete one that hit the token limit
-        const cleaned = result.text
+        // Use content (thinking already stripped by llama.rn) with text as fallback.
+        // Still run the regex in case content is empty and text has raw <think> blocks.
+        const cleaned = (result.content || result.text)
           .replace(/<think>[\s\S]*?<\/think>/g, '')
           .replace(/<think>[\s\S]*/g, '')
           .trim();

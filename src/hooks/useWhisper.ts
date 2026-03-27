@@ -68,9 +68,9 @@ export const useWhisper = () => {
           // if whisper.cpp detects a compression/repetition failure.
           temperature: 0.0,
           temperatureInc: 0.4,
-          // -1 tells whisper.cpp to use its internal default context window
-          // (no cross-segment context bleed that seeds repetition loops).
-          maxContext: -1,
+          // 0 disables cross-segment context so earlier (potentially hallucinated)
+          // tokens cannot bleed into later segments and seed repetition loops.
+          maxContext: 0,
           // Empty prompt clears any cached KV state from prior calls.
           prompt: '',
           maxThreads: 4,
