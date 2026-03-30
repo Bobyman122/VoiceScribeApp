@@ -86,9 +86,16 @@ class AudioConverterModule(reactContext: ReactApplicationContext) :
                 actualChannels = fmt.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
             } else if (outIdx >= 0) {
                 val buf = codec.getOutputBuffer(outIdx)!!
-                val chunk = ByteArray(info.size)
-                buf.get(chunk)
-                rawBytes.addAll(chunk.toList())
+                if (info.size > 0) {
+                    // MediaCodec output data is valid only in [offset, offset + size).
+                    // Reading from position 0 can corrupt PCM and tank Whisper accuracy.
+                    val readBuffer = buf.duplicate()
+                    readBuffer.position(info.offset)
+                    readBuffer.limit(info.offset + info.size)
+                    val chunk = ByteArray(info.size)
+                    readBuffer.get(chunk)
+                    rawBytes.addAll(chunk.toList())
+                }
                 codec.releaseOutputBuffer(outIdx, false)
                 if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) outputDone = true
             }

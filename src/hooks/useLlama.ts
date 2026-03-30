@@ -4,6 +4,63 @@ import { QwenModelId, SummaryFormat } from '../types';
 import { QWEN_MODELS, SUMMARY_MESSAGES } from '../constants/models';
 import { getModelPath } from '../utils/modelManager';
 
+const splitSentences = (input: string): string[] =>
+  input
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+const buildFallbackSummary = (text: string, format: SummaryFormat): string => {
+  const sentences = splitSentences(text);
+  const top = sentences.slice(0, 8);
+
+  if (top.length === 0) {
+    return 'Transcript unclear. Please try recording again in a quieter environment.';
+  }
+
+  switch (format) {
+    case 'brief':
+      return top.slice(0, 2).join(' ');
+    case 'paragraph':
+      return top.slice(0, 4).join(' ');
+    case 'bullets':
+      return top.slice(0, 5).map((s) => `- ${s}`).join('\n');
+    case 'action_items': {
+      const actionCandidates = top.filter((s) =>
+        /\b(need to|should|must|todo|to do|action item|follow up|next step|we will|we'll|i will|i'll)\b/i.test(s)
+      );
+      if (actionCandidates.length === 0) return 'No action items identified.';
+      return actionCandidates.slice(0, 5).map((s, i) => `${i + 1}. ${s}`).join('\n');
+    }
+    case 'key_points':
+      return top.slice(0, 5).map((s, i) => `${i + 1}. ${s}`).join('\n');
+    case 'detailed':
+      return top.join(' ');
+    default:
+      return top.slice(0, 4).join(' ');
+  }
+};
+
+const looksCorruptSummary = (text: string): boolean => {
+  const clean = text.trim();
+  if (!clean) return true;
+  if (/\b(\w+)(\s+\1){6,}/i.test(clean)) return true;
+
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length < 4) return true;
+
+  const uniqueRatio = new Set(words.map((w) => w.toLowerCase())).size / words.length;
+  if (uniqueRatio < 0.28) return true;
+
+  const letters = (clean.match(/[A-Za-z]/g) ?? []).length;
+  const letterRatio = letters / clean.length;
+  if (letterRatio < 0.35) return true;
+
+  return false;
+};
+
 export const useLlama = () => {
   const [isLoadingModel, setIsLoadingModel] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
@@ -69,11 +126,12 @@ export const useLlama = () => {
             messages,
             jinja: true,
             enable_thinking: false,
-            n_predict: 1024,
-            temperature: 0.7,
-            top_k: 40,
-            top_p: 0.9,
-            min_p: 0.05,
+            n_predict: 768,
+            // Keep decoding conservative for extractive, factual summaries.
+            temperature: 0.2,
+            top_k: 30,
+            top_p: 0.85,
+            min_p: 0.0,
             // Penalise repeating the same tokens — prevents token repetition loops
             penalty_repeat: 1.15,
             penalty_last_n: 128,
@@ -87,7 +145,7 @@ export const useLlama = () => {
             stop: ['<|im_end|>', '<|im_start|>'],
           },
           (data) => {
-            setStreamingText((prev) => prev + (data.content ?? data.token));
+            setStreamingText((prev) => prev + (data.content ?? data.token ?? ''));
           },
         );
 
@@ -97,8 +155,9 @@ export const useLlama = () => {
           .replace(/<think>[\s\S]*?<\/think>/g, '')
           .replace(/<think>[\s\S]*/g, '')
           .trim();
-        // Detect token repetition loops and discard
-        if (/\b(\w+)(\s+\1){6,}/i.test(cleaned)) return '';
+        if (looksCorruptSummary(cleaned)) {
+          return buildFallbackSummary(safeText, format);
+        }
         return cleaned;
       } finally {
         setIsSummarizing(false);

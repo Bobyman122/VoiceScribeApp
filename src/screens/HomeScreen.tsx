@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -73,7 +73,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       ripple2.setValue(0);
       ripple3.setValue(0);
     }
-  }, [isProcessing]);
+  }, [isProcessing, ripple1, ripple2, ripple3]);
   const pressureColors = PRESSURE_COLORS(t);
 
   const whisperModel = WHISPER_MODELS.find((m) => m.id === settings.selectedWhisperModel);
@@ -92,11 +92,11 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           await Promise.all([loadWhisper(settings.selectedWhisperModel), loadLlama(settings.selectedQwenModel)]);
         }
         setStatus('Ready to record');
-      } catch (e: any) {
+      } catch {
         setStatus('Failed to load models');
       }
     })();
-  }, [settings.selectedWhisperModel, settings.selectedQwenModel, settings.lazyLoadModels, modelsReady]);
+  }, [settings.selectedWhisperModel, settings.selectedQwenModel, settings.lazyLoadModels, modelsReady, loadWhisper, loadLlama]);
 
 
   const formatDuration = (secs: number): string => {
@@ -118,8 +118,18 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         setStatus('Stopping...');
         const rawAudioPath = await stopRecording();
         const wavPath = await convertToWavIfNeeded(rawAudioPath);
-        const audioCachePath = await normalizeAudioGain(wavPath);
-        const transcription = await transcribe(audioCachePath, settings.language);
+        let audioForTranscription = wavPath;
+        let transcription = await transcribe(audioForTranscription, settings.language);
+
+        // iOS-only fallback: normalize and retry only when raw decode is weak/empty.
+        // Running normalization unconditionally can sometimes over-amplify room noise.
+        if ((!transcription || transcription.length < 3) && Platform.OS === 'ios') {
+          const normalizedPath = await normalizeAudioGain(wavPath);
+          if (normalizedPath && normalizedPath !== wavPath) {
+            audioForTranscription = normalizedPath;
+            transcription = await transcribe(audioForTranscription, settings.language);
+          }
+        }
         if (!transcription || transcription.length < 3) {
           setStatus('No speech detected - try again');
           return;
@@ -134,7 +144,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         const summary = await summarize(transcription, settings.summaryFormat);
         const tempId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         let audioPath: string | undefined;
-        try { audioPath = await persistAudioFile(audioCachePath, tempId); } catch (_) {}
+        try { audioPath = await persistAudioFile(audioForTranscription, tempId); } catch {}
         await saveSession({
           createdAt: Date.now(), durationSecs, transcription, summary,
           summaryFormat: settings.summaryFormat, whisperModel: settings.selectedWhisperModel,

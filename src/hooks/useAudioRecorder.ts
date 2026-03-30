@@ -31,14 +31,18 @@ export const useAudioRecorder = () => {
       }
     }
 
-    const ext = Platform.OS === 'ios' ? 'wav' : 'mp4';
+    const ext = Platform.OS === 'ios' ? 'wav' : 'm4a';
     const path = `${RNFS.CachesDirectoryPath}/rec_${Date.now()}.${ext}`;
     savedPath.current = path;
 
     await player.startRecorder(path, {
       AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
       AudioSourceAndroid: AudioSourceAndroidType.MIC,
+      AudioSamplingRate: 16000,
+      AudioChannels: 1,
+      AudioEncodingBitRate: 64000,
       AVEncoderAudioQualityKeyIOS: AVEncoderAudioQualityIOSType.high,
+      AVModeIOS: 'measurement',
       AVFormatIDKeyIOS: 'lpcm',
       AVSampleRateKeyIOS: 16000,
       AVNumberOfChannelsKeyIOS: 1,
