@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#14112b" />
+  <title>Amiibo NFC Reader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── 1. Reset & base ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 15px; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: #14112b;
+      color: #ffffff;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input  { font-family: inherit; }
+    img    { display: block; max-width: 100%; }
+    a      { color: #a89af0; }
+
+    /* ── 2. CSS custom properties ───────────────────────────────────── */
+    :root {
+      --bg:           #14112b;
+      --bg-card:      #1e1a38;
+      --bg-card-deep: #14112b;
+      --bg-input:     #252046;
+      --bg-badge:     #2a2550;
+      --border:       #3b3470;
+      --divider:      #2e2a52;
+      --text-primary: #ffffff;
+      --text-secondary: #cccaec;
+      --text-muted:   #8880b8;
+      --text-faint:   #5550a0;
+      --accent:       #f26e7e;
+      --accent-dark:  #d45566;
+      --accent-violet:#a89af0;
+      --accent-green: #4cd98a;
+      --accent-orange:#f5a623;
+      --accent-red:   #ff6b35;
+      --blob:         #6c5ce7;
+      --radius-card:  20px;
+      --radius-btn:   14px;
+      --radius-input: 12px;
+      --shadow-card:  0 4px 32px rgba(0,0,0,0.35);
+      --transition:   0.2s ease;
+    }
+
+    /* ── 3. Layout ─────────────────────────────────────────────────── */
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 0 32px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px 16px 0;
+    }
+
+    /* ── 4. Header ─────────────────────────────────────────────────── */
+    #header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, #1e1a38 0%, #1a1634 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-violet));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-icon svg { width: 20px; height: 20px; }
+    #header h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+    #header h1 span { color: var(--accent); }
+    #compat-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    #compat-badge.supported   { background: rgba(76,217,138,0.15); color: var(--accent-green); }
+    #compat-badge.unsupported { background: rgba(255,107,53,0.15);  color: var(--accent-red); }
+    #compat-badge.unknown     { background: rgba(168,154,240,0.15); color: var(--accent-violet); }
+
+    /* ── 5. Cards ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 24px 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* ── 6. Compat warning banner ───────────────────────────────────── */
+    #compat-warning {
+      margin: 16px 16px 0;
+      background: rgba(255,107,53,0.12);
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    #compat-warning .warn-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    #compat-warning p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; }
+    #compat-warning strong { color: var(--accent-red); }
+
+    /* ── 7. Scan card ─────────────────────────────────────────────── */
+    #scan-card { text-align: center; }
+
+    /* NFC ring pulse indicator */
+    .scan-indicator {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 20px;
+    }
+    .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      opacity: 0.25;
+    }
+    .nfc-core {
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(242,110,126,0.15), rgba(168,154,240,0.15));
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .nfc-core svg { width: 36px; height: 36px; }
+
+    /* Scanning state: rings pulse outward */
+    .scan-indicator.scanning .ring-1 { animation: pulse-ring 1.8s ease-out infinite; }
+    .scan-indicator.scanning .ring-2 { animation: pulse-ring 1.8s ease-out 0.6s infinite; }
+    .scan-indicator.scanning .ring-3 { animation: pulse-ring 1.8s ease-out 1.2s infinite; }
+    .scan-indicator.scanning .nfc-core {
+      border-color: var(--accent);
+      background: rgba(242,110,126,0.18);
+    }
+
+    /* Success state */
+    .scan-indicator.success .ring { opacity: 0; }
+    .scan-indicator.success .nfc-core {
+      border-color: var(--accent-green);
+      background: rgba(76,217,138,0.18);
+      animation: flash-success 0.6s ease forwards;
+    }
+
+    /* Error state */
+    .scan-indicator.error .ring { opacity: 0; }
+    .scan-indicator.error .nfc-core {
+      border-color: var(--accent-red);
+      background: rgba(255,107,53,0.18);
+      animation: shake 0.4s ease;
+    }
+
+    .scan-status {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .scan-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+      min-height: 2.4em;
+    }
+
+    /* ── 8. Buttons ────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 28px;
+      border-radius: var(--radius-btn);
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      transition: transform 0.1s ease, background var(--transition), opacity var(--transition);
+      min-width: 140px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:disabled:active { transform: none; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #e0556a);
+      color: #ffffff;
+      box-shadow: 0 4px 18px rgba(242,110,126,0.35);
+    }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #f57f8e, var(--accent)); }
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--bg-badge); }
+    .btn-full { width: 100%; }
+
+    /* ── 9. Result card ────────────────────────────────────────────── */
+    #result-card { padding: 0; overflow: hidden; }
+    #result-card.visible { animation: slide-up 0.35s ease-out forwards; }
+
+    .amiibo-banner {
+      background: linear-gradient(135deg, #1a1040 0%, #251b4a 60%, #1e1a38 100%);
+      padding: 28px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid var(--divider);
+      position: relative;
+      overflow: hidden;
+    }
+    .amiibo-banner::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,92,231,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .amiibo-img-wrap {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin-bottom: 4px;
+    }
+    #amiibo-img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.6));
+      position: relative;
+      z-index: 1;
+    }
+    .amiibo-img-glow {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 20px;
+      background: radial-gradient(ellipse, rgba(168,154,240,0.4) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .amiibo-img-placeholder {
+      width: 140px;
+      height: 140px;
+      background: var(--bg-badge);
+      border-radius: 16px;
+      border: 2px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    .amiibo-info { padding: 20px; }
+    #amiibo-name {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      text-align: center;
+      letter-spacing: -0.4px;
+    }
+    .amiibo-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .badge-type    { background: rgba(242,110,126,0.15); color: var(--accent);        border: 1px solid rgba(242,110,126,0.3); }
+    .badge-series  { background: rgba(168,154,240,0.15); color: var(--accent-violet); border: 1px solid rgba(168,154,240,0.3); }
+
+    .info-rows { display: flex; flex-direction: column; gap: 0; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--divider);
+      gap: 12px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
+    .info-value { font-size: 0.9rem; color: var(--text-secondary); font-weight: 700; text-align: right; }
+    .info-value.mono { font-family: 'Courier New', monospace; font-size: 0.8rem; color: var(--accent-violet); letter-spacing: 1px; }
+
+    .result-actions {
+      padding: 0 20px 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .result-actions .btn { flex: 1; }
+
+    /* ── 10. Error card ────────────────────────────────────────────── */
+    #error-card { text-align: center; }
+    .error-icon-wrap {
+      width: 64px;
+      height: 64px;
+      background: rgba(255,107,53,0.12);
+      border: 2px solid rgba(255,107,53,0.3);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+    #error-title   { font-size: 1.05rem; font-weight: 800; color: var(--accent-red); margin-bottom: 8px; }
+    #error-message { font-size: 0.87rem; color: var(--text-muted); margin-bottom: 22px; line-height: 1.55; }
+
+    /* ── 11. Collapsible sections ──────────────────────────────────── */
+    details.collapsible { padding: 0; }
+    details.collapsible summary {
+      list-style: none;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      border-radius: var(--radius-card);
+      transition: background var(--transition);
+    }
+    details.collapsible summary::-webkit-details-marker { display: none; }
+    details.collapsible[open] summary { border-radius: var(--radius-card) var(--radius-card) 0 0; }
+    details.collapsible summary:hover { background: var(--bg-badge); }
+    .summary-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+    .summary-title .icon { font-size: 1rem; }
+    .chevron {
+      color: var(--text-faint);
+      font-size: 1.2rem;
+      font-weight: 300;
+      transition: transform 0.2s ease;
+      line-height: 1;
+    }
+    details[open] .chevron { transform: rotate(90deg); }
+    .collapsible-body {
+      padding: 0 20px 20px;
+      border-top: 1px solid var(--divider);
+    }
+
+    /* ── 12. Manual entry ──────────────────────────────────────────── */
+    .manual-hint { font-size: 0.83rem; color: var(--text-muted); margin: 14px 0 14px; line-height: 1.5; }
+    .input-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .input-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+    .hex-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-input);
+      padding: 11px 12px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+      width: 100%;
+      text-transform: lowercase;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .hex-input:focus { border-color: var(--accent-violet); box-shadow: 0 0 0 3px rgba(168,154,240,0.2); }
+    .hex-input.invalid { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(255,107,53,0.15); }
+    .input-error { font-size: 0.78rem; color: var(--accent-red); margin-top: -8px; margin-bottom: 8px; }
+
+    /* ── 13. Debug / hex dump ──────────────────────────────────────── */
+    .debug-meta { font-size: 0.8rem; color: var(--text-muted); margin: 14px 0 10px; display: flex; flex-direction: column; gap: 4px; }
+    .debug-meta span { display: block; }
+    .debug-meta .mono { font-family: 'Courier New', monospace; color: var(--accent-violet); }
+    .hex-dump {
+      background: var(--bg-card-deep);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      overflow-x: auto;
+      line-height: 1.8;
+      white-space: pre;
+    }
+    .hex-dump .hl { color: var(--accent); font-weight: 700; }
+
+    /* ── 14. Loading overlay ───────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(20,17,43,0.85);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .loading-text { font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); }
+
+    /* ── 15. Utility classes ───────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── 16. Keyframes ─────────────────────────────────────────────── */
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: 0.5; }
+      100% { transform: scale(1.9); opacity: 0;   }
+    }
+    @keyframes flash-success {
+      0%   { box-shadow: 0 0 0 0 rgba(76,217,138,0.6); }
+      50%  { box-shadow: 0 0 0 16px rgba(76,217,138,0); }
+      100% { box-shadow: 0 0 0 0 rgba(76,217,138,0); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-5px); }
+      40%       { transform: translateX(5px); }
+      60%       { transform: translateX(-5px); }
+      80%       { transform: translateX(5px); }
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ── 17. Responsive ────────────────────────────────────────────── */
+    @media (min-width: 480px) {
+      main { padding: 20px 20px 0; }
+      #header { padding: 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 12.5C2 8.36 5.36 5 9.5 5c1.04 0 2.03.2 2.93.56" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4.5 12.5c0-2.76 2.24-5 5-5 .7 0 1.37.14 1.97.4" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+          <path d="M7 12.5c0-1.38 1.12-2.5 2.5-2.5.35 0 .68.07.98.2" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".4"/>
+          <circle cx="15" cy="15" r="4" fill="#fff" opacity=".9"/>
+          <path d="M19 11l2-2M15 19l-1 2M11 15l-2 1" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+        </svg>
+      </div>
+      <h1>Amiibo <span>NFC</span> Reader</h1>
+    </div>
+    <div id="compat-badge" class="unknown">Checking…</div>
+  </header>
+
+  <!-- COMPAT WARNING BANNER -->
+  <div id="compat-warning" class="hidden">
+    <span class="warn-icon">⚠️</span>
+    <p id="compat-warning-text">Web NFC is not supported in this browser.</p>
+  </div>
+
+  <main>
+
+    <!-- SCAN CARD -->
+    <div id="scan-card" class="card">
+      <div id="scan-indicator" class="scan-indicator">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="nfc-core">
+          <svg id="nfc-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 7.5C3 5.5 5.5 4 8 4" stroke="#f26e7e" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 12c0-3.31 2.69-6 6-6" stroke="#f26e7e" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+            <path d="M3 16.5C3 12.36 6.36 9 10.5 9" stroke="#f26e7e" stroke-width="2" stroke-linecap="round" opacity=".4"/>
+            <circle cx="17" cy="17" r="3.5" fill="#f26e7e"/>
+            <path d="M17 15.5v2l1 1" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <p id="scan-status" class="scan-status">Ready to Scan</p>
+      <p id="scan-hint" class="scan-hint">Tap the button below, then hold an Amiibo to the back of your phone.</p>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="scan-btn" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+          Start Scanning
+        </button>
+        <button id="stop-btn" class="btn btn-secondary hidden">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+          Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULT CARD -->
+    <div id="result-card" class="card hidden">
+      <div class="amiibo-banner">
+        <div class="amiibo-img-wrap">
+          <img id="amiibo-img" src="" alt="Amiibo figure" />
+          <div class="amiibo-img-glow"></div>
+        </div>
+        <h2 id="amiibo-name">—</h2>
+        <div class="amiibo-badges">
+          <span id="amiibo-type-badge" class="badge badge-type"></span>
+          <span id="amiibo-series-badge" class="badge badge-series"></span>
+        </div>
+      </div>
+      <div class="amiibo-info">
+        <div class="info-rows">
+          <div class="info-row">
+            <span class="info-label">Game Series</span>
+            <span id="info-game-series" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Release (NA)</span>
+            <span id="info-release-na" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Release (JP)</span>
+            <span id="info-release-jp" class="info-value">—</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Amiibo ID</span>
+            <span id="info-amiibo-id" class="info-value mono">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button id="rescan-btn" class="btn btn-primary">Scan Another</button>
+        <button id="show-debug-btn" class="btn btn-secondary">Raw Data</button>
+      </div>
+    </div>
+
+    <!-- ERROR CARD -->
+    <div id="error-card" class="card hidden" style="text-align:center;">
+      <div class="error-icon-wrap" id="error-icon-wrap">❌</div>
+      <p id="error-title">Error</p>
+      <p id="error-message">Something went wrong.</p>
+      <button id="retry-btn" class="btn btn-primary" style="margin-top:4px;">Try Again</button>
+    </div>
+
+    <!-- MANUAL ENTRY -->
+    <details id="manual-section" class="card collapsible">
+      <summary>
+        <span class="summary-title"><span class="icon">⌨️</span> Manual ID Lookup</span>
+        <span class="chevron">›</span>
+      </summary>
+      <div class="collapsible-body">
+        <p class="manual-hint">
+          Enter the 8-character hex Head and Tail from your Amiibo's ID
+          (e.g. Head: <code style="color:var(--accent-violet)">01000000</code> Tail: <code style="color:var(--accent-violet)">03560902</code> = Mario).
+        </p>
+        <div class="input-row">
+          <div class="input-group">
+            <label for="head-input">Head (4 bytes)</label>
+            <input id="head-input" class="hex-input" type="text" maxlength="8" placeholder="01000000" autocomplete="off" spellcheck="false" />
+          </div>
+          <div class="input-group">
+            <label for="tail-input">Tail (4 bytes)</label>
+            <input id="tail-input" class="hex-input" type="text" maxlength="8" placeholder="03560902" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div id="manual-input-error" class="input-error hidden"></div>
+        <button id="manual-lookup-btn" class="btn btn-primary btn-full">Look Up Amiibo</button>
+      </div>
+    </details>
+
+    <!-- DEBUG / HEX DUMP -->
+    <details id="debug-section" class="card collapsible hidden">
+      <summary>
+        <span class="summary-title"><span class="icon">🔬</span> Raw Tag Data</span>
+        <span class="chevron">›</span>
+      </summary>
+      <div class="collapsible-body">
+        <div class="debug-meta">
+          <span>Tag UID: <span id="debug-uid" class="mono">—</span></span>
+          <span>Records: <span id="debug-record-count" class="mono">—</span></span>
+          <span>ID extracted at: <span id="debug-offset" class="mono">—</span></span>
+        </div>
+        <pre id="hex-dump" class="hex-dump">No data yet.</pre>
+      </div>
+    </details>
+
+  </main>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" class="hidden">
+  <div class="loading-spinner"></div>
+  <p class="loading-text">Looking up Amiibo…</p>
+</div>
+
+<script>
+'use strict';
+
+// ── DOM refs ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const $scanCard      = $('scan-card');
+const $scanBtn       = $('scan-btn');
+const $stopBtn       = $('stop-btn');
+const $scanIndicator = $('scan-indicator');
+const $scanStatus    = $('scan-status');
+const $scanHint      = $('scan-hint');
+const $resultCard    = $('result-card');
+const $errorCard     = $('error-card');
+const $retryBtn      = $('retry-btn');
+const $rescanBtn     = $('rescan-btn');
+const $showDebugBtn  = $('show-debug-btn');
+const $loadingOverlay= $('loading-overlay');
+const $compatBadge   = $('compat-badge');
+const $compatWarning = $('compat-warning');
+const $debugSection  = $('debug-section');
+const $manualSection = $('manual-section');
+const $manualLookupBtn = $('manual-lookup-btn');
+const $headInput     = $('head-input');
+const $tailInput     = $('tail-input');
+const $manualErr     = $('manual-input-error');
+
+// ── State ───────────────────────────────────────────────────────────────────
+let nfcReader       = null;
+let abortController = null;
+let scanActive      = false;
+
+// ── Compat check ─────────────────────────────────────────────────────────────
+function initCompatCheck() {
+  const ua = navigator.userAgent;
+  const isAndroid = /Android/i.test(ua);
+  const isIOS     = /iPhone|iPad|iPod/i.test(ua);
+  const isChrome  = /Chrome\//.test(ua) && !/Edge\/|Edg\//.test(ua);
+
+  if ('NDEFReader' in window) {
+    $compatBadge.textContent = 'NFC Ready';
+    $compatBadge.className   = 'supported';
+  } else {
+    $compatBadge.textContent = 'NFC Unsupported';
+    $compatBadge.className   = 'unsupported';
+    $scanBtn.disabled = true;
+
+    let msg;
+    if (isIOS) {
+      msg = '<strong>iOS is not supported.</strong> Web NFC only works in <strong>Chrome on Android</strong>. There is no workaround on iPhone or iPad.';
+    } else if (!isAndroid) {
+      msg = '<strong>Desktop browsers are not supported.</strong> Web NFC requires <strong>Chrome on an Android device</strong> with NFC hardware.';
+    } else if (!isChrome) {
+      msg = 'Your Android browser does not support Web NFC. Please open this page in <strong>Google Chrome for Android</strong>.';
+    } else {
+      msg = 'Web NFC is not available. Make sure you are using <strong>Chrome on Android</strong> and that NFC is enabled in your device settings.';
+    }
+
+    $('compat-warning-text').innerHTML = msg;
+    $compatWarning.classList.remove('hidden');
+  }
+}
+
+// ── UI mode helper ───────────────────────────────────────────────────────────
+function setIndicatorState(state) {
+  $scanIndicator.className = 'scan-indicator' + (state ? ' ' + state : '');
+}
+
+function showCard(which) {
+  // which: 'scan' | 'result' | 'error'
+  $resultCard.classList.add('hidden');
+  $errorCard.classList.add('hidden');
+
+  if (which === 'result') {
+    $resultCard.classList.remove('hidden');
+    $resultCard.classList.remove('visible');
+    void $resultCard.offsetWidth; // reflow to restart animation
+    $resultCard.classList.add('visible');
+  } else if (which === 'error') {
+    $errorCard.classList.remove('hidden');
+  }
+}
+
+// ── NFC scanning ─────────────────────────────────────────────────────────────
+async function startScan() {
+  if (!('NDEFReader' in window)) return;
+
+  $scanBtn.classList.add('hidden');
+  $stopBtn.classList.remove('hidden');
+  setIndicatorState('scanning');
+  $scanStatus.textContent = 'Ready — Hold Amiibo to Phone';
+  $scanHint.textContent   = 'Place the Amiibo flat against the back of your phone near the NFC area.';
+  $errorCard.classList.add('hidden');
+  $resultCard.classList.add('hidden');
+
+  abortController = new AbortController();
+  scanActive = true;
+
+  try {
+    nfcReader = new NDEFReader();
+    await nfcReader.scan({ signal: abortController.signal });
+
+    nfcReader.addEventListener('reading', handleReading);
+    nfcReader.addEventListener('readingerror', handleReadError);
+
+  } catch (err) {
+    scanActive = false;
+    $scanBtn.classList.remove('hidden');
+    $stopBtn.classList.add('hidden');
+    setIndicatorState('error');
+
+    let title = 'Scan Failed';
+    let msg   = err.message || 'Unknown error.';
+
+    if (err.name === 'NotAllowedError') {
+      title = 'Permission Denied';
+      msg   = 'Allow NFC access in your browser settings and try again.';
+    } else if (err.name === 'NotSupportedError') {
+      title = 'No NFC Hardware';
+      msg   = 'This device does not appear to have NFC hardware.';
+    } else if (err.name === 'NotReadableError') {
+      title = 'NFC Disabled';
+      msg   = 'Enable NFC in Android Settings → Connected devices → Connection preferences → NFC.';
+    }
+
+    showError(title, msg);
+  }
+}
+
+function stopScan() {
+  if (abortController) {
+    try { abortController.abort(); } catch (_) {}
+    abortController = null;
+  }
+  scanActive = false;
+  nfcReader  = null;
+  $scanBtn.classList.remove('hidden');
+  $stopBtn.classList.add('hidden');
+  setIndicatorState('');
+  $scanStatus.textContent = 'Ready to Scan';
+  $scanHint.textContent   = 'Tap the button below, then hold an Amiibo to the back of your phone.';
+}
+
+function handleReadError(err) {
+  setIndicatorState('error');
+  $scanStatus.textContent = 'Read Error';
+  $scanHint.textContent   = 'Could not read the tag. Try repositioning the Amiibo.';
+}
+
+function handleReading(event) {
+  const { message, serialNumber } = event;
+
+  // Stop scanning after first successful read
+  stopScan();
+  setIndicatorState('success');
+  $scanStatus.textContent = 'Tag Detected!';
+  $scanHint.textContent   = 'Looking up your Amiibo…';
+
+  // Update debug UID
+  $('debug-uid').textContent         = serialNumber || '—';
+  $('debug-record-count').textContent = message.records.length;
+
+  if (!message.records || message.records.length === 0) {
+    showError('No NDEF Data', 'This tag contains no NDEF records. Amiibo tags should have NDEF data — this may not be a genuine Amiibo.');
+    return;
+  }
+
+  // Try each record until we find an Amiibo ID
+  for (const record of message.records) {
+    if (!record.data) continue;
+    const bytes = new Uint8Array(record.data.buffer || record.data);
+    const result = extractAmiiboID(bytes);
+
+    if (result) {
+      populateDebugSection(bytes, serialNumber, result.offsetUsed, result.strategy);
+      lookupAmiibo(result.headHex, result.tailHex);
+      return;
+    }
+
+    // Even if extraction failed, show the hex dump
+    populateDebugSection(bytes, serialNumber, -1, 'none');
+  }
+
+  // Fell through — could not find a valid Amiibo ID
+  showError(
+    'Not Recognised as Amiibo',
+    'A tag was detected but no valid Amiibo character ID was found in its data. ' +
+    'This may be a blank or non-Amiibo NFC tag. Check the Raw Data section below for the raw bytes.'
+  );
+  $debugSection.classList.remove('hidden');
+}
+
+// ── Amiibo ID extraction ──────────────────────────────────────────────────────
+function extractAmiiboID(bytes) {
+  // Strategy 1 — primary: pages 21–22 relative to NDEF user memory start (page 4)
+  // Full dump offset 84 − page-4 offset 16 = 68 bytes into record.data
+  if (bytes.length >= 76) {
+    const head = bytes.slice(68, 72);
+    const tail = bytes.slice(72, 76);
+    if (isValidAmiiboID(head, tail)) {
+      return { headHex: toHex(head), tailHex: toHex(tail), offsetUsed: 68, strategy: 'offset-68 (pages 21–22, NDEF payload)' };
+    }
+  }
+
+  // Strategy 2 — full dump: pages 21–22 at absolute offset 84 from page 0
+  if (bytes.length >= 92) {
+    const head = bytes.slice(84, 88);
+    const tail = bytes.slice(88, 92);
+    if (isValidAmiiboID(head, tail)) {
+      return { headHex: toHex(head), tailHex: toHex(tail), offsetUsed: 84, strategy: 'offset-84 (full dump from page 0)' };
+    }
+  }
+
+  // Strategy 3 — exhaustive scan: slide an 8-byte window over the entire payload
+  for (let i = 0; i <= bytes.length - 8; i++) {
+    const head = bytes.slice(i,     i + 4);
+    const tail = bytes.slice(i + 4, i + 8);
+    if (isValidAmiiboID(head, tail)) {
+      return { headHex: toHex(head), tailHex: toHex(tail), offsetUsed: i, strategy: `scan-offset-${i}` };
+    }
+  }
+
+  return null;
+}
+
+function isValidAmiiboID(head, tail) {
+  // Reject all-zeros or all-0xFF (uninitialised pages)
+  if (head.every(b => b === 0x00) && tail.every(b => b === 0x00)) return false;
+  if (head.every(b => b === 0xFF) && tail.every(b => b === 0xFF)) return false;
+
+  // tail[2] is the figure-type byte: 0x00=Figure, 0x01=Card, 0x02=Yarn, 0x03=Band
+  // Anything above 0x03 is not a known Amiibo type
+  if (tail[2] > 0x03) return false;
+
+  // tail[3] is the subtype — generally non-zero for real Amiibo
+  // (kept as a soft hint; the API lookup is the real validation)
+  return true;
+}
+
+function toHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── AmiiboAPI lookup ──────────────────────────────────────────────────────────
+async function lookupAmiibo(headHex, tailHex) {
+  $loadingOverlay.classList.remove('hidden');
+
+  const id  = headHex + tailHex;
+  const url = `https://www.amiiboapi.com/api/amiibo/?id=${id}`;
+
+  const fetchAbort = new AbortController();
+  const timeoutId  = setTimeout(() => fetchAbort.abort(), 10000);
+
+  let response;
+  try {
+    response = await fetch(url, { signal: fetchAbort.signal });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    $loadingOverlay.classList.add('hidden');
+    if (err.name === 'AbortError') {
+      showError('Request Timed Out', 'AmiiboAPI did not respond within 10 seconds. Check your internet connection.');
+    } else {
+      showError('Network Error', `Could not reach AmiiboAPI: ${err.message}`);
+    }
+    return;
+  }
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    $loadingOverlay.classList.add('hidden');
+    showError('API Error', `AmiiboAPI returned HTTP ${response.status}. Please try again.`);
+    return;
+  }
+
+  let json;
+  try {
+    json = await response.json();
+  } catch (_) {
+    $loadingOverlay.classList.add('hidden');
+    showError('Parse Error', 'AmiiboAPI returned an unexpected response. Try again.');
+    return;
+  }
+
+  $loadingOverlay.classList.add('hidden');
+
+  if (!json.amiibo || json.amiibo.length === 0) {
+    const apiMsg = json.error ? ` (${json.error})` : '';
+    showError(
+      'Amiibo Not Found',
+      `ID ${headHex} ${tailHex} did not match any known Amiibo${apiMsg}. ` +
+      `This may be a bootleg tag, or the extracted offset may be wrong — ` +
+      `check the Raw Data section and try Manual ID Lookup with a different offset.`
+    );
+    $debugSection.classList.remove('hidden');
+    return;
+  }
+
+  displayAmiiboResult(json.amiibo[0], headHex, tailHex);
+}
+
+// ── Display result ─────────────────────────────────────────────────────────────
+function displayAmiiboResult(a, headHex, tailHex) {
+  // Image
+  const img = $('amiibo-img');
+  if (a.image) {
+    img.src     = a.image;
+    img.onerror = () => showImgPlaceholder();
+    img.onload  = () => img.style.display = 'block';
+    img.style.display = 'block';
+    const placeholder = document.querySelector('.amiibo-img-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+  } else {
+    showImgPlaceholder();
+  }
+
+  // Text fields
+  $('amiibo-name').textContent        = a.name         || '—';
+  $('amiibo-type-badge').textContent  = a.type         || '—';
+  $('amiibo-series-badge').textContent= a.amiiboSeries || '—';
+  $('info-game-series').textContent   = a.gameSeries   || '—';
+  $('info-release-na').textContent    = a.release?.na  || 'N/A';
+  $('info-release-jp').textContent    = a.release?.jp  || 'N/A';
+  $('info-amiibo-id').textContent     = `${headHex} ${tailHex}`;
+
+  showCard('result');
+  $debugSection.classList.remove('hidden');
+}
+
+function showImgPlaceholder() {
+  const img = $('amiibo-img');
+  img.style.display = 'none';
+  const wrap = img.parentElement;
+  if (!wrap.querySelector('.amiibo-img-placeholder')) {
+    const ph = document.createElement('div');
+    ph.className = 'amiibo-img-placeholder';
+    ph.textContent = '🎮';
+    wrap.insertBefore(ph, img);
+  }
+}
+
+// ── Debug / hex dump ───────────────────────────────────────────────────────────
+function populateDebugSection(bytes, uid, offsetUsed, strategy) {
+  $('debug-uid').textContent    = uid     || '—';
+  $('debug-offset').textContent = offsetUsed >= 0
+    ? `byte ${offsetUsed} (${strategy})`
+    : `not found (${strategy})`;
+
+  const hlStart = offsetUsed >= 0 ? offsetUsed : -1;
+  const hlEnd   = hlStart + 8;
+
+  let lines = [];
+  for (let row = 0; row < bytes.length; row += 16) {
+    const rowBytes = bytes.slice(row, row + 16);
+    const addr     = row.toString(16).padStart(4, '0');
+    let hexParts   = [];
+
+    for (let col = 0; col < rowBytes.length; col++) {
+      const absIdx = row + col;
+      const hex    = rowBytes[col].toString(16).padStart(2, '0');
+      if (absIdx >= hlStart && absIdx < hlEnd) {
+        hexParts.push(`<span class="hl">${hex}</span>`);
+      } else {
+        hexParts.push(hex);
+      }
+      if (col === 3 || col === 7 || col === 11) hexParts.push(' ');
+    }
+
+    lines.push(`${addr}  ${hexParts.join(' ')}`);
+  }
+
+  $('hex-dump').innerHTML = lines.join('\n') || 'Empty payload.';
+}
+
+// ── Error display ──────────────────────────────────────────────────────────────
+function showError(title, message) {
+  $('error-title').textContent   = title;
+  $('error-message').textContent = message;
+  showCard('error');
+  setIndicatorState('error');
+  setTimeout(() => setIndicatorState(''), 1400);
+}
+
+// ── Manual lookup ──────────────────────────────────────────────────────────────
+function handleManualLookup() {
+  const head = $headInput.value.trim().toLowerCase();
+  const tail = $tailInput.value.trim().toLowerCase();
+  const hexRe = /^[0-9a-f]{8}$/;
+  let valid = true;
+
+  $headInput.classList.remove('invalid');
+  $tailInput.classList.remove('invalid');
+  $manualErr.classList.add('hidden');
+
+  if (!hexRe.test(head) || !hexRe.test(tail)) {
+    valid = false;
+    if (!hexRe.test(head)) $headInput.classList.add('invalid');
+    if (!hexRe.test(tail)) $tailInput.classList.add('invalid');
+    $manualErr.textContent = 'Both fields must be exactly 8 hex characters (0–9, a–f).';
+    $manualErr.classList.remove('hidden');
+  }
+
+  if (valid) {
+    $manualErr.classList.add('hidden');
+    $resultCard.classList.add('hidden');
+    $errorCard.classList.add('hidden');
+    lookupAmiibo(head, tail);
+  }
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+function resetToIdle() {
+  stopScan();
+  showCard('scan');
+  $debugSection.classList.add('hidden');
+  setIndicatorState('');
+  $resultCard.classList.add('hidden');
+  $errorCard.classList.add('hidden');
+}
+
+// ── Event wiring ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initCompatCheck();
+
+  $scanBtn.addEventListener('click', startScan);
+  $stopBtn.addEventListener('click', stopScan);
+  $rescanBtn.addEventListener('click', resetToIdle);
+  $retryBtn.addEventListener('click', resetToIdle);
+  $manualLookupBtn.addEventListener('click', handleManualLookup);
+
+  $showDebugBtn.addEventListener('click', () => {
+    $debugSection.classList.remove('hidden');
+    $debugSection.open = true;
+    $debugSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  [$headInput, $tailInput].forEach(el => {
+    el.addEventListener('input', () => {
+      el.classList.remove('invalid');
+      $manualErr.classList.add('hidden');
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleManualLookup();
+    });
+  });
+});
+</script>
+</body>
+</html>
